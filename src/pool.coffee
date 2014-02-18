@@ -12,7 +12,7 @@ class Pool
 
   dequeue: (f) ->
     if @objects.length == 0
-      f @factory()
+      @factory f
     else
       f @objects.pop()
 

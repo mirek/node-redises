@@ -5,7 +5,7 @@ class Redises
 
   constructor: (options = {}) ->
     @pool = new Pool
-      factory: options.factory or (-> redis.createClient())
+      factory: options.factory or ((done) -> done(redis.createClient()))
 
   # Forward redis call to pool'ed client.
   #

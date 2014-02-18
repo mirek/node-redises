@@ -3,7 +3,7 @@ redis = require 'redis'
 {Redises} = require '../lib/redises'
 
 redises = new Redises
-  factory: (-> redis.createClient())
+  factory: ((done) -> done(redis.createClient()))
 
 describe 'Redises', ->
 
