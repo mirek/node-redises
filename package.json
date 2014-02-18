@@ -1,6 +1,6 @@
 {
   "name": "redises",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Redis client API compatible, transparent pooling support.",
   "main": "lib/redises.js",
   "scripts": {
