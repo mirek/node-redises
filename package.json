@@ -1,0 +1,30 @@
+{
+  "name": "redises",
+  "version": "0.0.0",
+  "description": "Redis client API compatible, transparent pooling support.",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mirek/node-redises.git"
+  },
+  "keywords": [
+    "redis",
+    "pool"
+  ],
+  "author": "Mirek Rusin <mirek [at] me [dot] com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mirek/node-redises/issues"
+  },
+  "homepage": "https://github.com/mirek/node-redises",
+  "dependencies": {
+    "redis": "~0.10.1",
+    "hiredis": "~0.1.16"
+  },
+  "devDependencies": {
+    "mocha": "~1.17.1"
+  }
+}
