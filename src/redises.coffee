@@ -16,8 +16,7 @@ class Redises
   __fwd: (k, args...) ->
 
     # Pop callback.
-    # TODO: iff it's a function
-    f = args.pop()
+    f = args.pop() if typeof args[args.length - 1] == 'function'
 
     # Use local var so we don't need to bind the following chain
     # of call.
