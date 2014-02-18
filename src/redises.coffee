@@ -7,10 +7,8 @@ class Redises
     @pool = new Pool
       factory: options.factory or (-> redis.createClient())
 
-  # set: (args...) -> @__fwd 'set', args...
-  # get: (args...) -> @__fwd 'get', args...
-
   # Forward redis call to pool'ed client.
+  #
   # @params [String] k Function name
   # @params args... Function call arguments
   __fwd: (k, args...) ->
@@ -197,10 +195,4 @@ module.exports.commands = [
 for c, i in module.exports.commands
    eval "Redises.prototype['#{c}'] = function () { return this.__fwd.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments))) }"
 
-r = new Redises
-r.set 'mirek:1', '1234', (err, resp) ->
-  console.log err, resp
-  
-  r.get 'mirek:1', (err, resp) ->
-    console.log err, resp
-
+module.exports.Redises = Redises
