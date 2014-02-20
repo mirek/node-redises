@@ -7,7 +7,10 @@ class Redises
     @pool = new Pool
       factory: options.factory or ((done) -> done(redis.createClient()))
 
-  # Forward redis call to pool'ed client.
+  script: (k, args...) ->
+    @__fwd 'script', k.toLowerCase(), args...
+
+  # Forward redis call to a new or one of pool'ed client.
   #
   # @params [String] k Function name
   # @params args... Function call arguments
@@ -42,21 +45,21 @@ module.exports.commands = [
   'blpop',
   'brpop',
   'brpoplpush',
-  'client',
-  'client getname',
-  'client kill',
-  'client list',
-  'client setname',
+  # 'client',
+  # 'client getname',
+  # 'client kill',
+  # 'client list',
+  # 'client setname',
   'cluster',
-  'config',
-  'config get',
-  'config resetstat',
-  'config rewrite',
-  'config set',
+  # 'config',
+  # 'config get',
+  # 'config resetstat',
+  # 'config rewrite',
+  # 'config set',
   'dbsize',
-  'debug',
-  'debug object',
-  'debug segfault',
+  # 'debug',
+  # 'debug object',
+  # 'debug segfault',
   'decr',
   'decrby',
   'del',
@@ -136,10 +139,10 @@ module.exports.commands = [
   'save',
   'scan',
   'scard',
-  'script exists',
-  'script flush',
-  'script kill',
-  'script load',
+  # 'script exists',
+  # 'script flush',
+  # 'script kill',
+  # 'script load',
   'sdiff',
   'sdiffstore',
   'select',
@@ -193,6 +196,12 @@ module.exports.commands = [
 ]
 
 for c, i in module.exports.commands
-   eval "Redises.prototype['#{c}'] = function () { return this.__fwd.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments))) }"
+   eval """
+     if (Redises.prototype['#{c}'] === undefined) {
+       Redises.prototype['#{c}'] = function () {
+         return this.__fwd.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments)))
+       }
+     }
+  """
 
 module.exports.Redises = Redises
