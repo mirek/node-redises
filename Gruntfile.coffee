@@ -1,6 +1,7 @@
 module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-mocha-test'
   grunt.loadNpmTasks 'grunt-contrib-coffee'
+  grunt.loadNpmTasks 'grunt-contrib-watch'
 
   grunt.initConfig
     pkg: grunt.file.readJSON("package.json")
@@ -10,6 +11,11 @@ module.exports = (grunt) ->
         files:
           'lib/redises.js': 'src/redises.coffee'
           'lib/pool.js': 'src/pool.coffee'
+
+    watch:
+      coffee:
+        files: ['src/**/*.coffee'],
+        tasks: ['coffee']
 
     mochaTest:
       test:
