@@ -4,52 +4,100 @@ class Pool
   # @param [Object] options
   # @param [Function] options.factory (done(object))
   constructor: (options = {}) ->
-    @objects = []
+
+    # Objects outside of the pool.
+    @outside = []
+
+    # Objects inside the pool.
+    @inside = []
+
+    # Decorators chain is invoked for each created object.
     @decorators = []
-    if options.factory?
-      factory = options.factory
 
-      # Factory, as a first decorator, doesn't have object argument. Make
-      # it consistent with the rest of decorators so we can chain them
-      # nicely.
-      @decorators.push ((object, done) -> factory(done))
+    @factory = options.factory
 
-    @min = if options.min? and +options.min >= 0 then (+options.min | 0) else 5
-    @max = if options.max? and +options.max >= 0 then (+options.max | 0) else 128
+    # # Set min and max.
+    # @min = if options.min? and +options.min >= 0 then (+options.min | 0) else 5
+    # @max = if options.max? and +options.max >= 0 then (+options.max | 0) else 128
+    # if @min > @max
+    #   [@min, @max] = [@max, @min]
+    # TODO: create min clients?
 
-    # Idiot proof.
-    if @min > @max
-      [@min, @max] = [@max, @min] 
+  # @return [Number] Number of objects inside and outside the pool.
+  count: ->
+    @inside.length + @outside.length
 
-    # TODO: create min clients
-    # dequeued = for i in [1..@min]
-    #   @
+  # @return [Number] Number of objects inside the pool.
+  insideCount: ->
+    @inside.length
 
-  length: ->
-    @objects.length
+  # @return [Number] Number of objects outside the pool.
+  outsideCount: ->
+    @outside.length
 
+  # Iterate over all objects (inside and outside the pool).
+  #
+  # @param [Function] f (object)
   each: (f) ->
-    for object in @objects
-      f(object)
+    f object for object in @inside
+    f object for object in @outside
 
-  enqueue: (object) ->
-    @objects.push object
+  # Append decorator to the factory chain and decorate all
+  # objects inside and outside the pool.
+  #
+  # @param [Function] decorator (object, done())
+  # @param [Function] done ()
+  decorate: (decorator, done = null) ->
 
-  # @param [Function] f (object, done(decorated))
-  appendDecorator: (f) ->
-    @decorators.push f
+    @decorators.push decorator
 
-  create: (done, object = null, i = 0) ->
-    @decorators[i] object, (decorated) =>
-      if i + 1 < @decorators.length
-        @create done, decorated, i + 1
-      else
-        done(decorated)
+    i = @count()
+    eachDone = () ->
+      if --i == 0
+        done() if done?
 
-  dequeue: (done) ->
-    if @objects.length == 0
-      @create done
+    @each (object) ->
+      decorator object, ->
+        eachDone()
+
+  # For internal use, decorates newly created object.
+  #
+  # @param [Object] object
+  # @param [Number] i Decorator's index
+  # @param [Function] done ()
+  decorateObject: (object, i, done) ->
+    if i < @decorators.length
+      @decorateObject object, i + 1, done
     else
-      done @objects.pop()
+      done()
+
+  # Create object by using factory method and all registered
+  # decorator functions in the factory chain.
+  #
+  # @param [Function] done (object)
+  create: (done) ->
+    @factory (object) =>
+      @decorateObject object, 0, ->
+        done(object)
+
+  # Put object back to the pool.
+  #
+  # @param [Object] object
+  enqueue: (object) ->
+    @outside.splice @outside.indexOf(object), 1
+    @inside.push object
+
+  # Pop the object from the pool or create new one.
+  # 
+  # @param [Function] done (object)
+  dequeue: (done) ->
+    if @inside.length > 0
+      object = @inside.pop()
+      @outside.push object
+      done object
+    else
+      @create (object) =>
+        @outside.push object
+        done object
 
 module.exports.Pool = Pool
