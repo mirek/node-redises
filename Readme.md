@@ -1,3 +1,0 @@
-## Summary
-
-Redis client pool.
