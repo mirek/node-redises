@@ -17,6 +17,7 @@ describe 'Redises', ->
 
   it 'should load script', (done) ->
     redises.script 'load', 'return "foo"', (err, resp) ->
+      assert.equal null, err
       sha1 = resp
       redises.evalsha sha1, 0, (err, resp) ->
         assert.equal 'foo', resp
