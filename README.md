@@ -180,15 +180,18 @@ Please note that `SCRIPT ...` commands give impression of statefull commands, bu
 
 The following commands hold state on the client side and require special treatment:
 
-* `SELECT` - todo, at the moment you can select database in the factory
-* `AUTH` - todo
-* `CLIENT GETNAME` - todo
-* `CLIENT SETNAME` - todo
+* `SELECT` - todo, at the moment you can select db in the factory method.
+* `AUTH` - todo, at the moment you can send auth from factory method.
+* `CLIENT GETNAME` - supported
+* `CLIENT SETNAME` - the only place it makes sense in the context of pool is the factory method, where it's supported.
 * `MULTI` - supported
 * `EXEC` - supported
 * `DISCARD` - supported
 * `WATCH` - supported
 * `UNWATCH` - supported
+
+I still need to have a look at those commands:
+
 * `SUBSCRIBE` - todo
 * `UNSUBSCRIBE` - todo
 * `PSUBSCRIBE` - todo
@@ -196,3 +199,8 @@ The following commands hold state on the client side and require special treatme
 * `PUBSUB` - todo
 * `PUNSUBSCRIBE` - todo
 
+You can invoke any client command or method by dequeuing client from the pool:
+
+    redisesClient.dequeue (client) ->
+      # ... do anything you want on the client and in the last callback you may want to...
+      redisesClient.enqueue(client)
