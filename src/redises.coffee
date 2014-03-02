@@ -3,18 +3,87 @@ redis = require 'redis'
 
 class Redises
 
+  # @param [Object] options
+  # @param [Number] options.db Default is 0.
+  # @param []
+  # @param [Function] options.factory 
   constructor: (options = {}) ->
+    @db = if options.db? then +options.db|0 else 0
     @pool = new Pool
-      factory: options.factory or ((done) -> done(redis.createClient()))
+      factory: options.factory or (done) =>
+        client = redis.createClient()
+        client.select @db, (err, resp) =>
+          done(client)
 
-  script: (k, args...) ->
-    @__fwd 'script', k.toLowerCase(), args...
+  enqueue: (client) ->
+    @pool.enqueue client
+
+  dequeue: (done) ->
+    @pool.dequeue done
+
+  script: (args...) ->
+    switch args[0].toLowerCase()
+      when 'exists', 'flush', 'kill', 'load'
+        @__command 'script', args...
+      else
+        throw new TypeError "Redises object #<#{this}> has no method script('#{args[0]}', ...)"
+
+  auth: (args...) ->
+    throw new TypeError("Redises#auth(...) not supported, call this command from factory or dequeue client manually.")
+
+  debug: (args...) ->
+    switch args[0].toLowerCase()
+      when 'object', 'segfault'
+        @__command 'debug', args...
+      else
+        throw new TypeError "Redises object #<#{this}> has no method script('#{args[0]}', ...)"
+
+  select: (args...) ->
+    throw new TypeError("Not supported.")
+
+  discard: (args...) ->
+    throw new TypeError("Not supported.")
+
+  multi: (args...) ->
+    throw new TypeError("Not supported.")
+
+  exec: (args...) ->
+    throw new TypeError("Not supported.")
+
+  watch: (args...) ->
+    throw new TypeError("Not supported.")
+
+  unwatch: (args...) ->
+    throw new TypeError("Not supported.")
+
+  # 'psubscribe',
+  # 'publish',
+  # 'pubsub',
+  # 'punsubscribe',
+  # 'subscribe',
+  # 'unsubscribe'
+
+  client: (args...) ->
+    switch args[0].toLowerCase()
+      when 'getname', 'kill', 'list'
+        @__command 'client', args...
+      when 'setname'
+        throw new TypeError "Redises object #<#{this}> does not support client('setname', ...) method. Invoke this command from factory or manually dequeue client and call this method."
+      else
+        throw new TypeError "Redises object #<#{this}> has no method config('#{#{args[0]}}', ...)"
+
+  config: (args...) ->
+    switch args[0].toLowerCase()
+      when 'get', 'resetstat', 'rewrite', 'set'
+        @__command 'config', args...
+      else
+        throw new TypeError "Redises object #<#{this}> has no method config('#{args[0]}', ...)"
 
   # Forward redis call to a new or one of pool'ed client.
   #
   # @params [String] k Function name
   # @params args... Function call arguments
-  __fwd: (k, args...) ->
+  __command: (k, args...) ->
 
     # Pop callback.
     f = args.pop() if typeof args[args.length - 1] == 'function'
@@ -37,7 +106,7 @@ class Redises
 
 module.exports.commands = [
   'append',
-  'auth',
+  # 'auth', TODO: Auth with prepend.
   'bgrewriteaof',
   'bgsave',
   'bitcount',
@@ -45,30 +114,27 @@ module.exports.commands = [
   'blpop',
   'brpop',
   'brpoplpush',
-  # 'client',
   # 'client getname',
   # 'client kill',
   # 'client list',
   # 'client setname',
-  'cluster',
-  # 'config',
+  # 'cluster',
   # 'config get',
   # 'config resetstat',
   # 'config rewrite',
   # 'config set',
   'dbsize',
-  # 'debug',
   # 'debug object',
   # 'debug segfault',
   'decr',
   'decrby',
   'del',
-  'discard',
+  # 'discard', # Part of multi.
   'dump',
   'echo',
   'eval',
   'evalsha',
-  'exec',
+  # 'exec', # Part of multi.
   'exists',
   'expire',
   'expireat',
@@ -114,18 +180,18 @@ module.exports.commands = [
   'move',
   'mset',
   'msetnx',
-  'multi',
+  # 'multi', Part of multi proxy.
   'object',
   'persist',
   'pexpire',
   'pexpireat',
   'ping',
   'psetex',
-  'psubscribe',
+  # 'psubscribe',
   'pttl',
-  'publish',
-  'pubsub',
-  'punsubscribe',
+  # 'publish',
+  # 'pubsub',
+  # 'punsubscribe',
   'quit',
   'randomkey',
   'rename',
@@ -145,7 +211,7 @@ module.exports.commands = [
   # 'script load',
   'sdiff',
   'sdiffstore',
-  'select',
+  # 'select',
   'set',
   'setbit',
   'setex',
@@ -165,7 +231,7 @@ module.exports.commands = [
   'srem',
   'sscan',
   'strlen',
-  'subscribe',
+  # 'subscribe',
   'substr',
   'sunion',
   'sunionstore',
@@ -173,9 +239,9 @@ module.exports.commands = [
   'time',
   'ttl',
   'type',
-  'unsubscribe',
-  'unwatch',
-  'watch',
+  # 'unsubscribe',
+  # 'unwatch',
+  # 'watch',
   'zadd',
   'zcard',
   'zcount',
@@ -199,8 +265,11 @@ for c, i in module.exports.commands
    eval """
      if (Redises.prototype['#{c}'] === undefined) {
        Redises.prototype['#{c}'] = function () {
-         return this.__fwd.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments)))
+         return this.__command.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments)))
        }
+     } else {
+       console.log("Redises.prototype['#{c}'] already defined.")
+       throw "Redises.prototype['#{c}'] already defined."
      }
   """
 
