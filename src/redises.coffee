@@ -261,16 +261,15 @@ module.exports.commands = [
   'zunionstore'
 ]
 
+# Closure wrapper
+__makeForwarder = (k) ->
+  () ->
+    @__command k, arguments...
+
 for c, i in module.exports.commands
-   eval """
-     if (Redises.prototype['#{c}'] === undefined) {
-       Redises.prototype['#{c}'] = function () {
-         return this.__command.apply(this, ['#{c}'].concat(Array.prototype.slice.call(arguments)))
-       }
-     } else {
-       console.log("Redises.prototype['#{c}'] already defined.")
-       throw "Redises.prototype['#{c}'] already defined."
-     }
-  """
+  if Redises.prototype[c]?
+    throw "Redises##{c} already defined!"
+  else
+    Redises.prototype[c] = __makeForwarder(c)
 
 module.exports.Redises = Redises
