@@ -12,6 +12,24 @@ Redis client with pool support and drop-in replacement/transparent API.
       redises.get 'myval', (err, resp) ->
         console.log err, resp
 
+
+    redis = require 'redis'
+    {Redises} = require 'redises'
+
+    # Select db 2
+    redises = new Redises
+      client = redis.createClient()
+      client.select 2, (err, resp) =>
+        done(client)
+
+    # Use multi
+    multi = redises.multi()
+    multi.set 'multi:test:1', 'foo'
+    multi.get 'multi:test:1'
+    multi.exec (err, resp) ->
+      console.log err, resp
+      # null [ 'OK', 'foo' ]
+
 ### Stateless commands
 
 All stateless commands are handled transparently. From library usage point of view all of them will behave as if they were called on redis client.
@@ -161,27 +179,19 @@ Please note that `SCRIPT ...` commands give impression of statefull commands, bu
 
 The following commands hold state on the client side and require special threatment:
 
-* `SELECT` - not supported yet. To select the pass your own factory method, ie:
+* `SELECT` - todo, at the moment you can select database in the factory
+* `AUTH` - todo
+* `CLIENT GETNAME` - todo
+* `CLIENT SETNAME` - todo
+* `MULTI` - supported
+* `EXEC` - supported
+* `DISCARD` - supported
+* `WATCH` - supported
+* `UNWATCH` - supported
+* `SUBSCRIBE` - todo
+* `UNSUBSCRIBE` - todo
+* `PSUBSCRIBE` - todo
+* `PUBLISH` - todo
+* `PUBSUB` - todo
+* `PUNSUBSCRIBE` - todo
 
-    redis = new Redises factory: (done) ->
-      client = redis.createClient()
-      client.select 2, (err, resp) =>
-        unless err?
-          done(client)
-
-* `AUTH` - not supported yet.
-* `CLIENT GETNAME`
-* `CLIENT SETNAME` - not supported yet.
-
-* `MULTI` - supported.
-* `EXEC` - supported.
-* `DISCARD` - not supported yet.
-* `WATCH` - supported.
-* `UNWATCH` - supported.
-
-* `SUBSCRIBE`
-* `UNSUBSCRIBE`
-* `PSUBSCRIBE`
-* `PUBLISH`
-* `PUBSUB`
-* `PUNSUBSCRIBE`
