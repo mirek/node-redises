@@ -1,6 +1,6 @@
 assert = require 'assert'
 redis = require 'redis'
-{Redises} = require '../lib/redises'
+{Redises} = require '../src/redises'
 
 redises = new Redises
   factory: ((done) -> done(redis.createClient()))
