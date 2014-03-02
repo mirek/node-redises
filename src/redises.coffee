@@ -1,5 +1,6 @@
 redis = require 'redis'
 {Pool} = require './pool'
+{Multi} = require './multi'
 
 class Redises
 
@@ -21,6 +22,11 @@ class Redises
   dequeue: (done) ->
     @pool.dequeue done
 
+  multi: (args) ->
+    new Multi this, args
+
+  MULTI: () -> @multi arguments...
+
   script: (args...) ->
     switch args[0].toLowerCase()
       when 'exists', 'flush', 'kill', 'load'
@@ -28,8 +34,12 @@ class Redises
       else
         throw new TypeError "Redises object #<#{this}> has no method script('#{args[0]}', ...)"
 
+  SCRIPT: () -> @script arguments...
+
   auth: (args...) ->
     throw new TypeError("Redises#auth(...) not supported, call this command from factory or dequeue client manually.")
+
+  AUTH: () -> @auth arguments...
 
   debug: (args...) ->
     switch args[0].toLowerCase()
@@ -38,23 +48,32 @@ class Redises
       else
         throw new TypeError "Redises object #<#{this}> has no method script('#{args[0]}', ...)"
 
+  DEBUG: () -> @debug arguments...
+
   select: (args...) ->
     throw new TypeError("Not supported.")
+
+  SELECT: () -> @select arguments...
 
   discard: (args...) ->
     throw new TypeError("Not supported.")
 
-  multi: (args...) ->
-    throw new TypeError("Not supported.")
+  DISCARD: () -> @discard arguments...
 
   exec: (args...) ->
     throw new TypeError("Not supported.")
 
+  EXEC: () -> @exec arguments...
+
   watch: (args...) ->
     throw new TypeError("Not supported.")
 
+  WATCH: () -> @watch arguments...
+
   unwatch: (args...) ->
     throw new TypeError("Not supported.")
+
+  UNWATCH: () -> @unwatch arguments...
 
   # 'psubscribe',
   # 'publish',
@@ -72,12 +91,16 @@ class Redises
       else
         throw new TypeError "Redises object #<#{this}> has no method config('#{#{args[0]}}', ...)"
 
+  CLIENT: () -> @client arguments...
+
   config: (args...) ->
     switch args[0].toLowerCase()
       when 'get', 'resetstat', 'rewrite', 'set'
         @__command 'config', args...
       else
         throw new TypeError "Redises object #<#{this}> has no method config('#{args[0]}', ...)"
+
+  CONFIG: () -> @config arguments...
 
   # Forward redis call to a new or one of pool'ed client.
   #
@@ -118,7 +141,6 @@ module.exports.commands = [
   # 'client kill',
   # 'client list',
   # 'client setname',
-  # 'cluster',
   # 'config get',
   # 'config resetstat',
   # 'config rewrite',
@@ -267,9 +289,9 @@ __makeForwarder = (k) ->
     @__command k, arguments...
 
 for c, i in module.exports.commands
-  if Redises.prototype[c]?
-    throw "Redises##{c} already defined!"
+  if Redises.prototype[c]? or Redises.prototype[c.toUpperCase()]
+    throw "Redises##{c} or Redises##{c.toUpperCase()} already defined!"
   else
-    Redises.prototype[c] = __makeForwarder(c)
+    Redises.prototype[c.toUpperCase()] = Redises.prototype[c] = __makeForwarder(c)
 
 module.exports.Redises = Redises

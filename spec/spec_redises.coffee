@@ -22,3 +22,13 @@ describe 'Redises', ->
       redises.evalsha sha1, 0, (err, resp) ->
         assert.equal 'foo', resp
         done()
+
+  it 'should exec multi', (done) ->
+    multi = redises.multi()
+    multi.set 'multi:test:1', '111'
+    multi.get 'multi:test:1'
+    multi.exec (err, resp) ->
+      assert.equal null, err
+      assert.equal 'OK', resp[0]
+      assert.equal '111', resp[1]
+      done()
