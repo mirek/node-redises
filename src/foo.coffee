@@ -118,9 +118,12 @@ class C
 
 A = ['a', 'b', 'c']
 
+make = (k) ->
+  () ->
+    @foo k, arguments
+
 for a in A
-  C.prototype[a] = (args...) ->
-    @foo a, args
+  C.prototype[a] = make(a)
 
 c = new C
 c.a()
